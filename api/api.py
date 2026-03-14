@@ -1,3 +1,5 @@
+from decimal import Decimal
+
 from ninja import File, NinjaAPI
 from .models import FinanceTransaction
 import csv
@@ -24,8 +26,22 @@ def create_transaction(request, type: str, datetime: str, category: str, notes: 
 
 @api.get("/transactions")
 def list_transactions(request):
-    transactions = FinanceTransaction.objects.all().values()
-    return {"transactions": list(transactions)}
+    rows = list(
+        FinanceTransaction.objects.all()
+        .order_by("datetime", "id")
+        .values("id", "type", "datetime", "category", "notes", "amount", "created_at")
+    )
+    running = Decimal("0.00")
+    for row in rows:
+        amount = Decimal(str(row["amount"]))
+        if row["type"] == "Income":
+            running += amount
+        elif row["type"] == "Expense":
+            running -= amount
+
+        row["balance"] = str(running)  # keep JSON-safe decimal string
+
+    return {"transactions": rows}
 
 @api.put("/update-transaction/{transaction_id}")
 def update_transaction(request, transaction_id: int, type: str = None, datetime: str = None, category: str = None, notes: str = None, amount: float = None):
