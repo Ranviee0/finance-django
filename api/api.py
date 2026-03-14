@@ -24,6 +24,35 @@ def create_transaction(request, type: str, datetime: str, category: str, notes: 
     )
     return {"message": "Transaction created successfully", "transaction_id": transaction.id}
 
+@api.get("/transaction/{transaction_id}")
+def get_transaction(request, transaction_id: int):
+
+    rows = list(
+        FinanceTransaction.objects.all()
+        .order_by("datetime", "id")
+        .values("id", "type", "datetime", "category", "notes", "amount", "created_at")
+    )
+
+    running = Decimal("0.00")
+    target = None
+
+    for row in rows:
+        amount = Decimal(str(row["amount"]))
+        if row["type"] == "Income":
+            running += amount
+        elif row["type"] == "Expense":
+            running -= amount
+        if row["id"] == transaction_id:
+            row["balance"] = str(running)
+            target = row
+            break
+        
+    if target is None:
+        return {"error": "Transaction not found"}
+
+    return {"transaction": {**target,"balance": str(running)}
+}
+
 @api.get("/transactions")
 def list_transactions(request):
     rows = list(
