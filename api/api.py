@@ -72,6 +72,39 @@ def list_transactions(request):
 
     return {"transactions": rows}
 
+@api.get("/category-summary")
+def category_summary(request, category: str, start_date: str = None, end_date: str = None):
+    rows = list(
+        FinanceTransaction.objects.all()
+        .order_by("datetime", "id")
+        .values("id", "type", "datetime", "category", "notes", "amount", "created_at")
+        .filter(category=category)
+    )
+    sum = Decimal("0.00")
+    for row in rows:
+        if row["type"] == "Expense":
+            sum += Decimal(str(row["amount"]))
+
+    return {"transactions": rows, "total_expense": str(sum)}
+
+@api.get("/category-all")
+def category_all(request):
+    rows = list(
+        FinanceTransaction.objects.all()
+        .order_by("datetime", "id")
+        .values("id", "type", "datetime", "category", "notes", "amount", "created_at")
+    )
+    category_sums = {}
+    for row in rows:
+        if row["type"] == "Expense":
+            category = row["category"]
+            amount = Decimal(str(row["amount"]))
+            if category not in category_sums:
+                category_sums[category] = Decimal("0.00")
+            category_sums[category] += amount
+
+    return {"categories": [{"category": cat, "total_expense": str(total)} for cat, total in category_sums.items()]}
+
 @api.put("/update-transaction/{transaction_id}")
 def update_transaction(request, transaction_id: int, type: str = None, datetime: str = None, category: str = None, notes: str = None, amount: float = None):
     try:
