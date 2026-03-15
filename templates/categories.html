@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+{% block title %}Categories — Finance{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+  <!-- Date filters -->
+  <form id="date-filter-form" class="flex flex-wrap items-center gap-3">
+    <label class="text-sm text-gray-500">
+      Start
+      <input type="date" name="start_date" value="{{ start_date }}"
+             class="ml-1 rounded border border-gray-300 px-2 py-1.5 text-sm"
+             hx-get="{% url 'category-table' %}"
+             hx-include="#date-filter-form"
+             hx-target="#category-table-container"
+             hx-swap="innerHTML" />
+    </label>
+    <span class="text-sm text-gray-400">to</span>
+    <label class="text-sm text-gray-500">
+      End
+      <input type="date" name="end_date" value="{{ end_date }}"
+             class="ml-1 rounded border border-gray-300 px-2 py-1.5 text-sm"
+             hx-get="{% url 'category-table' %}"
+             hx-include="#date-filter-form"
+             hx-target="#category-table-container"
+             hx-swap="innerHTML" />
+    </label>
+    <button type="button"
+            class="text-sm text-gray-500 hover:text-gray-700"
+            onclick="clearDates()">
+      Clear Dates
+    </button>
+  </form>
+
+  <!-- Two-column grid -->
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+    <!-- Left: Category table -->
+    <div class="lg:col-span-1">
+      <div id="category-table-container">
+        {% include "partials/category_table.html" %}
+      </div>
+    </div>
+
+    <!-- Right: Category detail panel -->
+    <div class="lg:col-span-2" id="category-detail">
+      <div class="rounded-lg border border-gray-200 p-4 text-sm text-gray-500">
+        Select a category from the table to view transactions.
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// Checkbox total calculation
+function updateCheckedTotal() {
+  const checkboxes = document.querySelectorAll('[data-category-checkbox]');
+  let total = 0;
+  let count = 0;
+  checkboxes.forEach(cb => {
+    if (cb.checked) {
+      total += parseFloat(cb.dataset.amount) || 0;
+      count++;
+    }
+  });
+  const el = document.getElementById('checked-total');
+  if (el) {
+    el.textContent = total.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+  const countEl = document.getElementById('checked-count');
+  if (countEl) {
+    countEl.textContent = count + ' selected';
+  }
+}
+
+// Clear date inputs and refresh category table
+function clearDates() {
+  document.querySelector('input[name="start_date"]').value = '';
+  document.querySelector('input[name="end_date"]').value = '';
+  htmx.ajax('GET', '{% url "category-table" %}', {target: '#category-table-container', swap: 'innerHTML'});
+  // Also clear the detail panel
+  document.getElementById('category-detail').innerHTML =
+    '<div class="rounded-lg border border-gray-200 p-4 text-sm text-gray-500">Select a category from the table to view transactions.</div>';
+}
+
+// Re-attach checkbox listeners after HTMX swaps
+document.body.addEventListener('htmx:afterSwap', function(evt) {
+  if (evt.detail.target.id === 'category-table-container') {
+    updateCheckedTotal();
+  }
+});
+</script>
+{% endblock %}

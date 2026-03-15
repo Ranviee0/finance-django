@@ -1,0 +1,44 @@
+<!-- Checked total bar -->
+<div class="mb-2 rounded-md border border-gray-200 px-3 py-2 text-sm">
+  <span class="font-medium">Checked total:</span>
+  <span id="checked-total">0.00</span>
+  <span class="text-gray-500">(<span id="checked-count">0 selected</span>)</span>
+</div>
+
+<!-- Category table -->
+<table class="w-full text-sm">
+  <caption class="mt-4 text-sm text-gray-500">Category totals</caption>
+  <thead>
+    <tr class="border-b border-gray-200">
+      <th class="h-10 w-8 px-2"></th>
+      <th class="h-10 px-3 text-left font-medium text-gray-500">Category</th>
+      <th class="h-10 px-3 text-right font-medium text-gray-500">Total Expense</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for cat in categories %}
+    <tr class="border-b border-gray-100 hover:bg-gray-50 transition-colors">
+      <td class="px-2 py-2">
+        <input type="checkbox"
+               data-category-checkbox
+               data-amount="{{ cat.total_expense }}"
+               onchange="updateCheckedTotal()"
+               class="h-4 w-4 rounded border-gray-300 accent-gray-900" />
+      </td>
+      <td class="px-3 py-2">
+        <button class="font-medium hover:underline underline-offset-4 text-left"
+                hx-get="{% url 'category-detail' %}?category={{ cat.category|urlencode }}&start_date={{ start_date }}&end_date={{ end_date }}"
+                hx-target="#category-detail"
+                hx-swap="innerHTML">
+          {{ cat.category }}
+        </button>
+      </td>
+      <td class="px-3 py-2 text-right tabular-nums">{{ cat.formatted_total }}</td>
+    </tr>
+    {% empty %}
+    <tr>
+      <td colspan="3" class="h-24 text-center text-gray-500">No results.</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>

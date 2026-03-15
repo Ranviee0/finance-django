@@ -17,8 +17,18 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path
 from api.api import api
+from api import views
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path("api/", api.urls),
+
+    # Frontend pages
+    path('', views.transactions_view, name='transactions'),
+    path('category/', views.categories_view, name='categories'),
+
+    # HTMX partials
+    path('htmx/transactions-table/', views.transactions_table_partial, name='transactions-table'),
+    path('htmx/category-table/', views.category_table_partial, name='category-table'),
+    path('htmx/category-detail/', views.category_detail_partial, name='category-detail'),
 ]
